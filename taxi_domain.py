@@ -128,17 +128,19 @@ class TaxiDomain:
 			self.grid.perform_action(action, verbose=True)
 
 
-	def value_iteration(self, eps, gamma = 0.9):
+	def value_iteration(self, eps, iterations=1000, gamma = 0.9):
 		U = {}
 		U1 = {state : (0, None) for state in self.policy.keys()}
+
+		max_norm_index = []
 
 		delta = eps*(1-gamma)/gamma
 		threshold = eps*(1-gamma)/gamma
 
-		iterations = 0
+		iteration = 0
 
-		while delta >= eps*(1-gamma)/gamma:
-			iterations += 1
+		while delta >= eps*(1-gamma)/gamma and iteration < iterations:
+			iteration += 1
 			U = U1.copy()
 			delta = 0
 			for s in self.policy.keys():
@@ -176,10 +178,14 @@ class TaxiDomain:
 				if abs(U1[s][0] - U[s][0]) > delta:
 					delta = abs(U1[s][0] - U[s][0])
 
+			max_norm_index.append(delta)
+
 		for key in U.keys():
 			self.policy[key] = U[key][1]
 
-		print("convergence obtained in", iterations, "iterations.")
+		print("convergence obtained in", iteration, "iterations.")
+
+		return max_norm_index
 
 	def policy_iteration(self, linalg = False):
 		return NotImplemented
@@ -189,11 +195,3 @@ class TaxiDomain:
 
 	def sarsa(self, epsilon = 0.1, decaying = False):
 		return NotImplemented
-
-
-grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
-taxi = TaxiDomain(grid)
-
-taxi.value_iteration(0.1)
-
-taxi.simulate()
