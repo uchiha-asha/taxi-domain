@@ -135,7 +135,10 @@ class TaxiDomain:
 		delta = eps*(1-gamma)/gamma
 		threshold = eps*(1-gamma)/gamma
 
+		iterations = 0
+
 		while delta >= eps*(1-gamma)/gamma:
+			iterations += 1
 			U = U1.copy()
 			delta = 0
 			for s in self.policy.keys():
@@ -175,6 +178,8 @@ class TaxiDomain:
 
 		for key in U.keys():
 			self.policy[key] = U[key][1]
+
+		print("convergence obtained in", iterations, "iterations.")
 
 	def policy_iteration(self, linalg = False):
 		return NotImplemented
