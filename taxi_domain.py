@@ -34,8 +34,7 @@ class Grid:
 		self.destination = destination
 		self.actionSpace = {}
 		self.cells = []
-		self.passengerPicked = False
-		self.passengerDropped = False
+		self.passenger = False
 		self.construct_grid(gridPath)
 
 	# Only vertical wall allowed apart from box wall
@@ -64,10 +63,10 @@ class Grid:
 
 
 	def perform_action(self, action, verbose=False):
-		newState = self.get_next_state((self.carPos, self.passengerPicked, self.passengerDropped), action)
+		newState = self.get_next_state((self.carPos, self.passenger), action)
 		
-		(self.carPos, self.passengerPicked, self.passengerDropped) = newState
-		if self.passengerPicked:
+		(self.carPos, self.passenger) = newState
+		if self.passenger:
 			self.passengerPos = self.carPos
 
 		if verbose:
@@ -78,26 +77,25 @@ class Grid:
 		return self.passengerDropped
 
 	def get_next_state(self, curState, action):
-		print(curState)
 		if action not in self.actionSpace[curState[0]]:
-			return (self.carPos, self.passengerPicked, self.passengerDropped)
+			return (self.carPos, self.passenger)
 
 		x, y = curState[0][0], curState[0][1]
-		isPassengerPicked, isPassengerDropped = curState[1], curState[2]
+		passenger = curState[1]
 		if action == NORTH:
-			y -= 1
-		if action == SOUTH:
-			y += 1
-		if action == EAST:
-			x += 1
-		if action == WEST:
 			x -= 1
-		if action == PICKUP and self.passengerPos == self.carPos:
-			isPassengerPicked = True
-		if action == PUTDOWN and self.passengerPicked and self.passengerPos == self.destination:
-			isPassengerDropped = True
+		if action == SOUTH:
+			x += 1
+		if action == EAST:
+			y += 1
+		if action == WEST:
+			y -= 1
+		if action == PICKUP and self.passengerPos == curState[0]:
+			passenger = True
+		if action == PUTDOWN and self.passenger == True:
+			passenger = False
 
-		return ((x, y), isPassengerPicked, isPassengerDropped)
+		return ((x, y), passenger)
 
 
 class TaxiDomain:
@@ -105,16 +103,15 @@ class TaxiDomain:
 		self.grid = grid
 		self.policy = {}
 		for cell in self.grid.cells:
-			self.policy[(cell, False, False)] = WEST
-			self.policy[(cell, True, False)] = WEST
-			self.policy[(cell, True, True)] = WEST
+			self.policy[(cell, False)] = WEST
+			self.policy[(cell, True)] = WEST
 
 	def get_reward(self, curState, action):
 		if action == PUTDOWN:
-			if curState[0] == self.grid.destination:
+			if curState[0] == self.grid.destination and curState[1] == True:
 				return 20
 			else:
-				return -10
+				return -1
 
 		if action == PICKUP and self.grid.passengerPos != curState[0]:
 			return -10
@@ -122,20 +119,18 @@ class TaxiDomain:
 		return -1
 
 	def simulate(self):
-		while not self.grid.passenger_dropped():
-			action = self.policy[(self.grid.carPos, self.grid.passengerPicked, self.grid.passengerDropped)]
-			if action in [PICKUP, PUTDOWN]:
-				self.grid.perform_action(action)
-			else:
-				if Utility.sample_navigation():
-					self.grid.perform_action(action)
-				else:
-					self.grid.perform_action(Utility.sample_navigation_action())
+		while True:
+			action = self.policy[(self.grid.carPos, self.grid.passenger)]
+			
+			if action == None:
+				break
+				
+			self.grid.perform_action(action, verbose=True)
 
 
 	def value_iteration(self, eps, gamma = 0.9):
 		U = {}
-		U1 = {state : 0 for state in self.policy.keys()}
+		U1 = {state : (0, None) for state in self.policy.keys()}
 
 		delta = eps*(1-gamma)/gamma
 		threshold = eps*(1-gamma)/gamma
@@ -143,19 +138,17 @@ class TaxiDomain:
 		while delta >= eps*(1-gamma)/gamma:
 			U = U1.copy()
 			delta = 0
-
 			for s in self.policy.keys():
 				mx = 0
 				mx_act = None
 
-				if s[1] == True and s[2] == True:
+				if s[0] == self.grid.destination and s[1] == True:
+					U1[s] = (20, None)
 					continue
-
 				for action in self.grid.actionSpace[s[0]]:
 					if action not in ALLNAVIGATIONS:
-						reward = get_reward(s, action)
-						sample = reward + gamma * U[s]
-
+						reward = self.get_reward(s, action)
+						sample = reward + gamma * U[self.grid.get_next_state(s, action)][0]
 						if mx_act == None or sample > mx:
 							mx = sample
 							mx_act = action
@@ -163,23 +156,25 @@ class TaxiDomain:
 						sample = 0
 						for a in ALLNAVIGATIONS:
 							if a == action:
-								sample += 0.85*(self.get_reward(s, a) + gamma * U[self.grid.get_next_state(s, a)])
-							elif a not in self.grid.actionSpace[s]:
-								sample += 0.05*(-1 + gamma * U[s])
+								sample += 0.85*(self.get_reward(s, a) + gamma * U[self.grid.get_next_state(s, a)][0])
+							elif a not in self.grid.actionSpace[s[0]]:
+								sample += 0.05*(-1 + gamma * U[s][0])
 							else:
-								sample += 0.05*(self.get_reward(s,a) + gamma* U[self.grid.get_next_state(s, a)])
+								sample += 0.05*(self.get_reward(s,a) + gamma* U[self.grid.get_next_state(s, a)][0])
 
 						if mx_act == None or sample > mx:
 							mx = sample
 							mx_act = action
 
 
-				U1[s] = mx
 
-				if abs(U1[s] - U[s]) > delta:
-					delta = abs(U1[s] - U[s])
+				U1[s] = (mx, mx_act)
 
-		return U
+				if abs(U1[s][0] - U[s][0]) > delta:
+					delta = abs(U1[s][0] - U[s][0])
+
+		for key in U.keys():
+			self.policy[key] = U[key][1]
 
 	def policy_iteration(self, linalg = False):
 		return NotImplemented
@@ -191,10 +186,9 @@ class TaxiDomain:
 		return NotImplemented
 
 
-grid = Grid('grid_5x5.txt', (1,1), (1,1), (1,1))
+grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
 taxi = TaxiDomain(grid)
 
-print(grid.cells)
-print(grid.actionSpace)
+taxi.value_iteration(0.1)
 
-print(taxi.value_iteration(10))
+taxi.simulate()
