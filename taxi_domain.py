@@ -121,8 +121,7 @@ class TaxiDomain:
 
 	def simulate(self):
 		while not self.grid.passenger_dropped():
-			curCell = self.grid.carPos
-			action = self.policy[curCell]
+			action = self.policy[(self.grid.carPos, self.grid.passengerPicked, self.grid.passengerDropped)]
 			if action in [PICKUP, PUTDOWN]:
 				self.grid.perform_action(action)
 			else:
