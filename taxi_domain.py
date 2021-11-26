@@ -290,24 +290,24 @@ class TaxiDomain:
 # grid = Grid('grid_5x5.txt', (1,2), (1,1), (1,5))
 # td1 = TaxiDomain(grid, [(1,1), (1,5), (5,1), (5,4)])
 
-grid2 = Grid('grid_2x2.txt', (2,1), (1,1), (1,2))
-td1 = TaxiDomain(grid2, [(1,2)])
+# grid2 = Grid('grid_2x2.txt', (2,1), (1,1), (1,2))
+# td1 = TaxiDomain(grid2, [(1,2)])
 
 
-rewards = []
-iterations = 1
-for i in range(200):
-	r, iterations = td1.q_learning_episode(sarsa=False, decaying=True, iterations=iterations)
-	rewards.append(r)
+# rewards = []
+# iterations = 1
+# for i in range(2000):
+# 	r, iterations = td1.q_learning_episode(sarsa=False, decaying=True, iterations=iterations)
+# 	rewards.append(r)
 
-for key in td1.policy.keys():
-	for action in action_list:
-		print(key, action, td1.Q[(key, action)])
-		pass
+# for key in td1.policy.keys():
+# 	for action in action_list:
+# 		print(key, action, td1.Q[(key, action)])
+# 		pass
 
 
-plt.plot(rewards)
-plt.show()
+# plt.plot(rewards)
+# plt.show()
 
 # print(grid.actionSpace)
 # grid.perform_action(EAST, verbose = True)
