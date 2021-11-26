@@ -20,17 +20,17 @@ class Utility:
 
 
 	def sample_navigation_action():
-		x = random.randint(0, 399)
-		return action_list[x//100]
+		x = random.randint(0, 3)
+		return action_list[x]
 
 	def sample_action():
-		x = random.randint(0, 599)
-		return action_list[x//100]
+		x = random.randint(0, 5)
+		return action_list[x]
 
 	def sample_exploration(epsilon):
-		x = random.randint(1, 1000)
+		x = random.randint(1, 10000)
 		# print(x)
-		return x <= int(epsilon*1000)
+		return x <= int(epsilon*10000)
 
 
 
@@ -150,8 +150,8 @@ class TaxiDomain:
 					self.grid.perform_action(Utility.sample_navigation_action())
 
 
-	def decay(epsilon=0.1, iter=1):
-		return epsilon
+	def decay(self, epsilon=0.1, iterations=1):
+		return epsilon/iterations
 
 
 
@@ -229,16 +229,6 @@ class TaxiDomain:
 	def sample_episode(self):
 		cell = list(self.grid.actionSpace.keys())[random.randint(0, len(self.grid.actionSpace)-1)]
 		passengerPos = list(self.grid.actionSpace.keys())[random.randint(0, len(self.grid.actionSpace)-1)]
-		# cell =  None
-		# while cell is None:
-		# 	cell = list(self.grid.actionSpace.keys())[random.randint(0, len(self.grid.actionSpace)-1)]
-		# 	if cell in self.depos:
-		# 		cell is None
-		# passengerPos = None
-		# while passengerPos is None:
-		# 	passengerPos = list(self.grid.actionSpace.keys())[random.randint(0, len(self.grid.actionSpace)-1)]
-		# 	if self.grid.destination == passengerPos:
-		# 		passengerPos = None
 		return cell, passengerPos
 
 	def sample_action(self, curState, epsilon):
@@ -252,9 +242,9 @@ class TaxiDomain:
 			action = self.best_action(curState)[0]
 		return action
 
-	def q_learning_episode(self, alpha=0.25, epsilon=0.1, gamma=0.99, maxEpisodeIter=500, decaying=False, iterations=1, evaluate=False):
+	def q_learning_episode(self, alpha=0.25, epsilon=0.1, gamma=0.99, 
+		maxEpisodeIter=500, decaying=False, iterations=1, sarsa=False, evaluate=False):
 		self.grid.carPos, self.grid.passengerPos = self.sample_episode()
-		# self.grid.carPos, self.grid.passengerPos = (2,2), (2,2)
 		curState = (self.grid.carPos, False, self.grid.passengerPos)
 		if self.Q is None:
 			self.Q = {}
@@ -262,10 +252,8 @@ class TaxiDomain:
 				for action in action_list:
 					self.Q[(key, action)] = 0
 					
-		# print(self.Q)
-		# print(self.grid.carPos, self.grid.passengerPos, self.grid.destination)
 		discounted_reward, gamma1 = 0, 1
-		for i in range(500):
+		for i in range(maxEpisodeIter):
 			if curState[2] == self.grid.destination and (not curState[1]):
 				return discounted_reward, iterations
 
@@ -279,7 +267,12 @@ class TaxiDomain:
 
 			cur_q_value = self.Q[(curState, action)]
 			if not evaluate:
-				self.Q[(curState, action)] = (1-alpha)*cur_q_value + alpha*(reward + gamma*self.best_action(newState)[1])
+				if sarsa:
+					new_action = self.sample_action(newState, epsilon1)
+					new_q_value = self.Q[(newState, new_action)]
+				else:
+					new_q_value = self.best_action(newState)[1]
+				self.Q[(curState, action)] = (1-alpha)*cur_q_value + alpha*(reward + gamma*new_q_value)
 
 			discounted_reward += gamma1*reward
 			gamma1 *= gamma
@@ -302,8 +295,9 @@ td1 = TaxiDomain(grid2, [(1,2)])
 
 
 rewards = []
-for i in range(2000):
-	r, _ = td1.q_learning_episode()
+iterations = 1
+for i in range(200):
+	r, iterations = td1.q_learning_episode(sarsa=False, decaying=True, iterations=iterations)
 	rewards.append(r)
 
 for key in td1.policy.keys():
