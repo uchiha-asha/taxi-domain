@@ -92,13 +92,13 @@ class Grid:
 
 		x, y = curState[0][0], curState[0][1]
 		passengerInCar, passengerPos = curState[1], curState[2]
-		if action == NORTH and y != 1:
+		if action == NORTH and x != 1:
 			x -= 1
-		if action == SOUTH and y != self.cols:
+		if action == SOUTH and x != self.rows:
 			x += 1
-		if action == EAST and x != self.rows:
+		if action == EAST and y != self.cols:
 			y += 1
-		if action == WEST and x != 1:
+		if action == WEST and y != 1:
 			y -= 1
 		if action == PICKUP and curState[0] == curState[2]:
 			passengerInCar = True
@@ -294,11 +294,11 @@ class TaxiDomain:
 
 
 
-grid = Grid('grid_5x5.txt', (1,2), (1,1), (1,5))
-td1 = TaxiDomain(grid, [(1,1), (1,5), (5,1), (5,4)])
+# grid = Grid('grid_5x5.txt', (1,2), (1,1), (1,5))
+# td1 = TaxiDomain(grid, [(1,1), (1,5), (5,1), (5,4)])
 
-# grid2 = Grid('grid_2x2.txt', (2,1), (1,1), (1,2))
-# td1 = TaxiDomain(grid2, [(1,2)])
+grid2 = Grid('grid_2x2.txt', (2,1), (1,1), (1,2))
+td1 = TaxiDomain(grid2, [(1,2)])
 
 
 rewards = []
