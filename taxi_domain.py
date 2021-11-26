@@ -10,11 +10,14 @@ PICKUP = 'Pick Up'
 PUTDOWN = 'Put Down'
 action_list = [NORTH, SOUTH, EAST, WEST, PICKUP, PUTDOWN]
 
+ALLACTIONS = [NORTH, SOUTH, EAST, WEST, PICKUP, PUTDOWN]
+ALLNAVIGATIONS = [NORTH, SOUTH, EAST, WEST]
 
 class Utility:
-	def sample_navigation():
+	def sample_navigation(self):
 		x = random.randint(1, 100)
 		return True
+
 
 	def sample_navigation_action():
 		x = random.randint(0, 399)
@@ -30,15 +33,18 @@ class Utility:
 		return x <= int(epsilon*1000)
 
 
+
 class Grid:
 	def __init__(self, gridPath, carPos, passengerPos, destination):
 		self.carPos = carPos
 		self.passengerPos = passengerPos
 		self.destination = destination
 		self.actionSpace = {}
+
 		self.passengerInCar = False
 		self.rows = 0
 		self.cols = 0
+
 		self.construct_grid(gridPath)
 
 	# Only vertical wall allowed apart from box wall
@@ -105,6 +111,7 @@ class Grid:
 		return ((x, y), passengerInCar, passengerPos)
 
 
+
 class TaxiDomain:
 	def __init__(self, grid, depos, online=False):
 		self.grid = grid
@@ -147,8 +154,66 @@ class TaxiDomain:
 		return epsilon
 
 
-	def value_iteration(self, gamma = 0.9):
-		return NotImplemented
+
+	def value_iteration(self, eps, iterations=1000, gamma = 0.9):
+		U = {}
+		U1 = {state : (0, None) for state in self.policy.keys()}
+
+		max_norm_index = []
+
+		delta = eps*(1-gamma)/gamma
+		threshold = eps*(1-gamma)/gamma
+
+		iteration = 0
+
+		while delta >= eps*(1-gamma)/gamma and iteration < iterations:
+			iteration += 1
+			U = U1.copy()
+			delta = 0
+			for s in self.policy.keys():
+				mx = 0
+				mx_act = None
+
+				if s[0] == self.grid.destination and s[1] == True:
+					U1[s] = (20, None)
+					continue
+				for action in self.grid.actionSpace[s[0]]:
+					if action not in ALLNAVIGATIONS:
+						reward = self.get_reward(s, action)
+						sample = reward + gamma * U[self.grid.get_next_state(s, action)][0]
+						if mx_act == None or sample > mx:
+							mx = sample
+							mx_act = action
+					else:
+						sample = 0
+						for a in ALLNAVIGATIONS:
+							if a == action:
+								sample += 0.85*(self.get_reward(s, a) + gamma * U[self.grid.get_next_state(s, a)][0])
+							elif a not in self.grid.actionSpace[s[0]]:
+								sample += 0.05*(-1 + gamma * U[s][0])
+							else:
+								sample += 0.05*(self.get_reward(s,a) + gamma* U[self.grid.get_next_state(s, a)][0])
+
+						if mx_act == None or sample > mx:
+							mx = sample
+							mx_act = action
+
+
+
+				U1[s] = (mx, mx_act)
+
+				if abs(U1[s][0] - U[s][0]) > delta:
+					delta = abs(U1[s][0] - U[s][0])
+
+			max_norm_index.append(delta)
+
+		for key in U.keys():
+			self.policy[key] = U[key][1]
+
+		print("convergence obtained in", iteration, "iterations.")
+
+		return max_norm_index
+
 
 	def policy_iteration(self, linalg = False):
 		return NotImplemented
@@ -228,6 +293,7 @@ class TaxiDomain:
 		return NotImplemented
 
 
+
 grid = Grid('grid_5x5.txt', (1,2), (1,1), (1,5))
 td1 = TaxiDomain(grid, [(1,1), (1,5), (5,1), (5,4)])
 
@@ -251,3 +317,4 @@ plt.show()
 
 # print(grid.actionSpace)
 # grid.perform_action(EAST, verbose = True)
+
