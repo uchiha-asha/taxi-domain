@@ -372,7 +372,7 @@ class TaxiDomain:
 
 		return mx_act
 
-	def norm_loss(V, U):
+	def norm_loss(self,V, U):
 		delta = 0
 
 		for s in self.policy.keys():
@@ -382,11 +382,6 @@ class TaxiDomain:
 		return delta
 
 	def policy_iteration(self, epsilon = 0.1, iterations = 100, gamma = 0.9, linalg = False, opt_pol = None):
-		for cell1 in self.grid.actionSpace.keys():
-			for cell2 in self.grid.actionSpace.keys():
-				self.policy[(cell1, False, cell2)] = WEST
-				self.policy[(cell1, True, cell1)] = WEST
-
 		idx_mapping = {}
 		j = 0
 		P = self.P_matrix()
@@ -411,8 +406,9 @@ class TaxiDomain:
 			else:
 				V = self.iterative_policy_evaluation(P, R, gamma, epsilon, iterations)
 			#print(V)
-			loss = norm_loss(V, opt_pol)
-			losses.append(loss)
+			if opt_pol != None:
+				loss = self.norm_loss(V, opt_pol)
+				losses.append(loss)
 			for s in self.policy.keys():
 				act1 = self.policy[s]
 				act2 = self.get_max_action(s, P, R, V)
@@ -422,10 +418,12 @@ class TaxiDomain:
 					changes.append([s, act1, act2])
 					unchanged = False
 			
-			print(len(changes))
+			print("no. of changes",len(changes))
 
-		return losses
-	
+		return V, losses
+	'''
+	>>>>>>> Stashed changes
+	'''
 	def best_action(self, curState):
 		best_action_val, best_q_value = NORTH, -(2**63)
 		for action in action_list:

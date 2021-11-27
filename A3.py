@@ -18,7 +18,7 @@ if sys.argv[1] == '1':
 		grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
 		taxi = TaxiDomain(grid, [(5,5)])
 		if sys.argv[3] == '1':
-			taxi.value_iteration(sys.argv[4])
+			taxi.value_iteration(float(sys.argv[4]))
 			taxi.simulate()
 		elif sys.argv[3] == '2':
 			gammas = [0.01, 0.1, 0.5, 0.8, 0.99]
@@ -53,6 +53,29 @@ if sys.argv[1] == '1':
 				json.dump(policies, f, indent=6)
 		else:
 			print("Not a Valid Execution...")
+	elif sys.argv[2] == '3':
+		if sys.argv[3] == '1':
+			grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
+			taxi = TaxiDomain(grid, [(5,5)])
+			taxi.policy_iteration(linalg = False, gamma=0.99)
+			taxi.simulate()
+		elif sys.argv[3] == '2':
+			grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
+			taxi = TaxiDomain(grid, [(5,5)])
+			opt_pol,_ = taxi.policy_iteration(linalg = False)
+
+			gammas = [0.1, 0.5, 0.8, 0.99]
+			colors = ['b', 'g', 'y', 'tab:pink']
+
+			for i in range(len(gammas)):
+				grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
+				taxi = TaxiDomain(grid, [(5,5)])
+				_,losses = taxi.policy_iteration(linalg = False, gamma=gammas[i], opt_pol=opt_pol)
+				plt.plot([i+1 for i in range(len(losses))], losses, color = colors[i], label= gammas[i])
+
+			plt.legend()
+			plt.savefig("policyplots.png")
+
 
 elif sys.argv[1] == '2':
 	if sys.argv[2] == '2':
