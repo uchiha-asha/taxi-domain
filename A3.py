@@ -35,39 +35,33 @@ if sys.argv[1] == '1':
 		elif sys.argv[3] == '3':
 			gammas = [0.1, 0.99]
 
-			passengerPos = [(1,1), (3,3), (2,1)]
-			destination = [(1,1), (5,5), (4,3)]
-			carPos = [(4,4), (4,3), (2,3)]
+			policy = {}
 
-			policies = {}
-
-			for i in range(len(carPos)):
-				grid = Grid('grid_5x5.txt', passengerPos[i], destination[i], carPos[i])
-				taxi = TaxiDomain(grid)
-				for gamma in gammas:
-					taxi.value_iteration(0.1, gamma=gamma, iterations=20)
-					policy = {str(key): taxi.policy[key] for key in taxi.policy.keys()}
-					policies[f"{passengerPos[i]}, {destination[i]}, {carPos[i]}, {gamma}"] = policy
+			grid = Grid('grid_5x5.txt', (1,1), (5,1), (1,5))
+			taxi = TaxiDomain(grid, [1,5])
+			for gamma in gammas:
+				taxi.value_iteration(0.1, gamma=gamma, iterations=20)
+				policy = {str(key): taxi.policy[key] for key in taxi.policy.keys()}
+				print(policy)
 
 			with open("A3-Q2.3.json","w") as f:
-				json.dump(policies, f, indent=6)
+				json.dump(policy, f, indent=6)
 		else:
 			print("Not a Valid Execution...")
 	elif sys.argv[2] == '3':
 		if sys.argv[3] == '1':
 			grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
 			taxi = TaxiDomain(grid, [(5,5)])
-			taxi.policy_iteration(linalg = False, gamma=0.99)
+			taxi.policy_iteration(linalg = True, gamma=0.9)
 			taxi.simulate()
 		elif sys.argv[3] == '2':
-			grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
-			taxi = TaxiDomain(grid, [(5,5)])
-			opt_pol,_ = taxi.policy_iteration(linalg = False)
-
-			gammas = [0.1, 0.5, 0.8, 0.99]
-			colors = ['b', 'g', 'y', 'tab:pink']
+			gammas = [0.01, 0.1, 0.5, 0.8, 0.99]
+			colors = ['r', 'b', 'g', 'y', 'tab:pink']
 
 			for i in range(len(gammas)):
+				grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
+				taxi = TaxiDomain(grid, [(5,5)])
+				opt_pol,_ = taxi.policy_iteration(linalg = False, gamma=gammas[i])
 				grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
 				taxi = TaxiDomain(grid, [(5,5)])
 				_,losses = taxi.policy_iteration(linalg = False, gamma=gammas[i], opt_pol=opt_pol)
