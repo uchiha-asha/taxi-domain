@@ -90,7 +90,7 @@ class Grid:
 		return newState
 
 	def passenger_dropped(self):
-		return self.destination == self.passengerPos
+		return self.destination == self.passengerPos and self.passengerInCar == False
 
 	def get_next_state(self, curState, action):
 		if action not in self.actionSpace[curState[0]]:
@@ -127,7 +127,7 @@ class TaxiDomain:
 		for cell1 in self.grid.actionSpace.keys():
 			for cell2 in self.grid.actionSpace.keys():
 				self.policy[(cell1, False, cell2)] = WEST
-				self.policy[(cell1, True, cell2)] = WEST
+				self.policy[(cell1, True, cell1)] = WEST
 			
 
 	def get_reward(self, curState, action):
@@ -148,7 +148,7 @@ class TaxiDomain:
 		while True:
 			action = self.policy[(self.grid.carPos, self.grid.passengerInCar, self.grid.passengerPos)]
 			
-			if action == None:
+			if self.grid.passengerPos in self.depos and self.grid.passengerInCar != False:
 				break
 				
 			self.grid.perform_action(action, verbose=True)
@@ -320,7 +320,7 @@ class TaxiDomain:
 			Y_mat.append(y)
 
 		# print(X_mat)
-		print(Y_mat)
+		#print(Y_mat)
 		V_mat = np.linalg.solve(X_mat, Y_mat)
 		V = {}
 		i = 0
@@ -339,14 +339,14 @@ class TaxiDomain:
 		while True:
 			pass
 
-	def get_max_action(self, s, P, V):
+	def get_max_action(self, s, P, R, V):
 		mx = 0
 		mx_act = None
 
 		for action in ALLACTIONS:
 			sum = 0
 			for s1 in self.policy.keys():
-				sum += P[s][action][s1] * V[s1]
+				sum += P[s][action][s1]*(R[s][action][s1] + V[s1])
 
 			sum += self.get_reward(s, action)
 			if sum > mx or mx_act == None:
@@ -371,19 +371,22 @@ class TaxiDomain:
 		unchanged = False
 
 		while not unchanged and iteration < iterations:
+			print("iteration:", iteration)
 			iteration += 1
-			print("iteration")
 			unchanged = True
-
+			changes = []
 			V = method[linalg](P, R, gamma)
 			#print(V)
 			for s in self.policy.keys():
 				act1 = self.policy[s]
-				act2 = self.get_max_action(s, P, V)
+				act2 = self.get_max_action(s, P, R, V)
 
 				if act1 != act2:
 					self.policy[s] = act2
+					changes.append([s, act1, act2])
 					unchanged = False
+
+			print(len(changes))
 			
 
 	'''
@@ -486,13 +489,13 @@ class TaxiDomain:
 '''
 ======='''
 if __name__ == '__main__':
-	grid = Grid('grid_2x2.txt', (1,1), (1,1), (2,2))
-	taxi = TaxiDomain(grid, [(2,2)])
+	grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
+	taxi = TaxiDomain(grid, [(5,5)])
 	taxi.policy_iteration(linalg = True)
 	#print(grid.actionSpace[(2,2)])
 	#print(taxi.R_matrix()[((2,2), False, (2,1))][PICKUP])
 	print(taxi.policy)
 
-	#taxi.simulate()
+	taxi.simulate()
 '''>>>>>>> Stashed changes
 '''
