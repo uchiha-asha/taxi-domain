@@ -132,7 +132,7 @@ class TaxiDomain:
 
 	def get_reward(self, curState, action):
 		if action == PUTDOWN:
-			if curState[0] == self.grid.destination and curState[1]:
+			if curState[0] in self.depos and curState[1]:
 				return 20
 			elif curState[0] != curState[2]:
 				return -10
@@ -281,12 +281,12 @@ class TaxiDomain:
 					k = {state : 0 for state in self.policy.keys()}
 
 					re = self.get_reward(s, action)
-
-					k[s] = re
+					next = self.grid.get_next_state(s, action)
+					k[next] = re
 
 					A[action] = k
 				else:
-					k = {state : 0 for state in self.policy.keys()}
+					k = {state : -1 for state in self.policy.keys()}
 
 					re = self.get_reward(s, action)
 
@@ -489,12 +489,18 @@ class TaxiDomain:
 '''
 ======='''
 if __name__ == '__main__':
-	grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
-	taxi = TaxiDomain(grid, [(5,5)])
+	grid = Grid('grid_2x2.txt', (2,1), (1,1), (2,2))
+	taxi = TaxiDomain(grid, [(2,2)])
 	taxi.policy_iteration(linalg = True)
 	#print(grid.actionSpace[(2,2)])
 	#print(taxi.R_matrix()[((2,2), False, (2,1))][PICKUP])
-	print(taxi.policy)
+	pol = taxi.policy
+	P = taxi.P_matrix()
+	R = taxi.R_matrix()
+
+	for s in pol.keys():
+		if s[1] == True:
+			print(s,pol[s])
 
 	taxi.simulate()
 '''>>>>>>> Stashed changes
