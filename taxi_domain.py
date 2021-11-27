@@ -239,7 +239,9 @@ class TaxiDomain:
 			for action in ALLACTIONS:
 				if action not in ALLNAVIGATIONS:
 					k = {state : 0 for state in self.policy.keys()}
-					k[s] = 1
+
+					sNext = self.grid.get_next_state(s, action) 
+					k[sNext] = 1
 
 					A[action] = k
 				else:
@@ -276,7 +278,7 @@ class TaxiDomain:
 
 			for action in ALLACTIONS:
 				if action not in ALLNAVIGATIONS:
-					k = {state : -1 for state in self.policy.keys()}
+					k = {state : 0 for state in self.policy.keys()}
 
 					re = self.get_reward(s, action)
 
@@ -284,7 +286,11 @@ class TaxiDomain:
 
 					A[action] = k
 				else:
-					k = {state : -1 for state in self.policy.keys()}
+					k = {state : 0 for state in self.policy.keys()}
+
+					re = self.get_reward(s, action)
+
+					k[s] = re
 
 					A[action] = k
 
@@ -313,6 +319,8 @@ class TaxiDomain:
 			X_mat.append(x)
 			Y_mat.append(y)
 
+		# print(X_mat)
+		print(Y_mat)
 		V_mat = np.linalg.solve(X_mat, Y_mat)
 		V = {}
 		i = 0
@@ -320,7 +328,8 @@ class TaxiDomain:
 			V[s] = V_mat[i]
 			i += 1
 
-		print(X_mat)
+		# print(V)
+		# print(X_mat)
 		return V
 
 	def iterative_policy_evaluation(self, gamma, eps, iterations = 10):
@@ -339,6 +348,7 @@ class TaxiDomain:
 			for s1 in self.policy.keys():
 				sum += P[s][action][s1] * V[s1]
 
+			sum += self.get_reward(s, action)
 			if sum > mx or mx_act == None:
 				mx = sum
 				mx_act = action
@@ -481,7 +491,7 @@ if __name__ == '__main__':
 	taxi.policy_iteration(linalg = True)
 	#print(grid.actionSpace[(2,2)])
 	#print(taxi.R_matrix()[((2,2), False, (2,1))][PICKUP])
-	#print(taxi.policy)
+	print(taxi.policy)
 
 	#taxi.simulate()
 '''>>>>>>> Stashed changes
