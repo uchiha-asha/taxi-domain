@@ -1,12 +1,11 @@
 import random
-'''<<<<<<< Updated upstream
 import matplotlib.pyplot as plt
 
-======='''
+
 import numpy as np
 import sys
 np.set_printoptions(threshold=sys.maxsize)
-'''>>>>>>> Stashed changes'''
+
 
 NORTH = 'North'
 SOUTH = 'South'
@@ -128,11 +127,22 @@ class TaxiDomain:
 			for cell2 in self.grid.actionSpace.keys():
 				self.policy[(cell1, False, cell2)] = WEST
 				self.policy[(cell1, True, cell1)] = WEST
+
+
+	def simulate(self):
+		while True:
+			action = self.policy[(self.grid.carPos, self.grid.passengerInCar, self.grid.passengerPos)]
+			
+			if self.grid.passengerPos in self.depos and self.grid.passengerInCar != False:
+				break
+				
+			self.grid.perform_action(action, verbose=True)
+
 			
 
 	def get_reward(self, curState, action):
 		if action == PUTDOWN:
-			if curState[0] in self.depos and curState[1]:
+			if curState[0] == self.grid.destination and curState[1]:
 				return 20
 			elif curState[0] != curState[2]:
 				return -10
@@ -144,19 +154,10 @@ class TaxiDomain:
 		
 		return -1
 
-	def simulate(self):
-		while True:
-			action = self.policy[(self.grid.carPos, self.grid.passengerInCar, self.grid.passengerPos)]
-			
-			if self.grid.passengerPos in self.depos and self.grid.passengerInCar != False:
-				break
-				
-			self.grid.perform_action(action, verbose=True)
 
 
 	def decay(self, epsilon=0.1, iterations=1):
 		return epsilon/iterations
-
 
 
 	def value_iteration(self, eps, iterations=1000, gamma = 0.9):
@@ -223,11 +224,6 @@ class TaxiDomain:
 
 		return max_norm_index
 
-	'''<<<<<<< Updated upstream
-
-		def policy_iteration(self, linalg = False):
-			return NotImplemented
-	======='''
 	def P_matrix(self):
 		idx_mapping = {}
 		j = 0
@@ -429,9 +425,7 @@ class TaxiDomain:
 			print(len(changes))
 
 		return losses
-	'''
-	>>>>>>> Stashed changes
-	'''
+	
 	def best_action(self, curState):
 		best_action_val, best_q_value = NORTH, -(2**63)
 		for action in action_list:
@@ -498,9 +492,7 @@ class TaxiDomain:
 
 	def sarsa(self, epsilon = 0.1, decaying = False):
 		return NotImplemented
-'''
-<<<<<<< Updated upstream
-'''
+
 
 # grid = Grid('grid_5x5.txt', (1,2), (1,1), (1,5))
 # td1 = TaxiDomain(grid, [(1,1), (1,5), (5,1), (5,4)])
@@ -526,22 +518,19 @@ class TaxiDomain:
 
 # print(grid.actionSpace)
 # grid.perform_action(EAST, verbose = True)
-'''
-======='''
-if __name__ == '__main__':
-	grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
-	taxi = TaxiDomain(grid, [(5,5)])
-	taxi.policy_iteration(linalg = False)
-	#print(grid.actionSpace[(2,2)])
-	#print(taxi.R_matrix()[((2,2), False, (2,1))][PICKUP])
-	pol = taxi.policy
-	P = taxi.P_matrix()
-	R = taxi.R_matrix()
 
-	for s in pol.keys():
-		if s[1] == True:
-			print(s,pol[s])
+# if __name__ == '__main__':
+# 	grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
+# 	taxi = TaxiDomain(grid, [(5,5)])
+# 	taxi.policy_iteration(linalg = False)
+# 	#print(grid.actionSpace[(2,2)])
+# 	#print(taxi.R_matrix()[((2,2), False, (2,1))][PICKUP])
+# 	pol = taxi.policy
+# 	P = taxi.P_matrix()
+# 	R = taxi.R_matrix()
 
-	taxi.simulate()
-'''>>>>>>> Stashed changes
-'''
+# 	for s in pol.keys():
+# 		if s[1] == True:
+# 			print(s,pol[s])
+
+# 	taxi.simulate()

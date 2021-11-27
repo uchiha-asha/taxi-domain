@@ -83,9 +83,10 @@ elif sys.argv[1] == '2':
 		td = TaxiDomain(grid, [(1,1), (1,5), (5,1), (5,4)])
 		iterations=1
 		for i in range(2000):
-			_, iterations = td.q_learning_episode(sarsa=True, decaying=True, iterations=iterations, maxEpisodeIter=2000)
+			_, iterations = td.q_learning_episode(sarsa=True, decaying=True, iterations=iterations)
 		for i in range(5):
-			reward, iterations = td.q_learning_episode(sarsa=True, evaluate=True, epsilon=0)
+			iterations=1
+			reward, iterations = td.q_learning_episode(sarsa=True, evaluate=True, epsilon=0, maxEpisodeIter=2000)
 			print('Reward: ', reward, end = ', ')
 			if iterations <= 1999:
 				print('Goal achieved in ', iterations, 'steps')
@@ -115,6 +116,7 @@ elif sys.argv[1] == '2':
 	elif sys.argv[2] == '5':
 		depos = [(1,1),(1,6),(1,9),(4,4),(5,7),(9,1),(10,5),(10,10)]
 		total_reward = 0
+		random.seed(6969)
 		for k in range(5):
 			destination = depos[random.randint(0, 7)]
 			print('Training policy for destination', destination)
@@ -122,7 +124,11 @@ elif sys.argv[1] == '2':
 			td  = TaxiDomain(grid, depos)
 			for i in range(10000):
 				reward, _ = td.q_learning_episode(sarsa=True)
-				total_reward += reward
+			local_reward = 0
+			for j in range(10):
+				reward, _ = td.q_learning_episode(sarsa=True, evaluate=True, epsilon=0)
+				local_reward += reward
+			total_reward += local_reward/10
 		print('Average accumulated discounted reward: ', total_reward/5)
 
 
