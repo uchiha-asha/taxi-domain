@@ -94,7 +94,7 @@ class Grid:
 
 	def get_next_state(self, curState, action):
 		if action not in self.actionSpace[curState[0]]:
-			return (self.carPos, self.passengerInCar, self.passengerPos)
+			return curState
 
 		x, y = curState[0][0], curState[0][1]
 		passengerInCar, passengerPos = curState[1], curState[2]
@@ -248,10 +248,10 @@ class TaxiDomain:
 					for a in ALLNAVIGATIONS:
 						if a == action:
 							next = self.grid.get_next_state(s, a)
-							k[next] = 0.85
+							k[next] += 0.85
 						else:
 							next = self.grid.get_next_state(s, a)
-							k[next] = 0.05
+							k[next] += 0.05
 
 					A[action] = k
 
@@ -311,7 +311,7 @@ class TaxiDomain:
 					x.append(0)
 
 			X_mat.append(x)
-			Y_mat.append([y])
+			Y_mat.append(y)
 
 		V_mat = np.linalg.solve(X_mat, Y_mat)
 		V = {}
@@ -320,6 +320,7 @@ class TaxiDomain:
 			V[s] = V_mat[i]
 			i += 1
 
+		print(X_mat)
 		return V
 
 	def iterative_policy_evaluation(self, gamma, eps, iterations = 10):
@@ -361,10 +362,11 @@ class TaxiDomain:
 
 		while not unchanged and iteration < iterations:
 			iteration += 1
+			print("iteration")
 			unchanged = True
 
 			V = method[linalg](P, R, gamma)
-
+			#print(V)
 			for s in self.policy.keys():
 				act1 = self.policy[s]
 				act2 = self.get_max_action(s, P, V)
@@ -474,10 +476,13 @@ class TaxiDomain:
 '''
 ======='''
 if __name__ == '__main__':
-	grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
-	taxi = TaxiDomain(grid, [(5,5)])
+	grid = Grid('grid_2x2.txt', (1,1), (1,1), (2,2))
+	taxi = TaxiDomain(grid, [(2,2)])
 	taxi.policy_iteration(linalg = True)
-	print(taxi.policy)
+	#print(grid.actionSpace[(2,2)])
+	#print(taxi.R_matrix()[((2,2), False, (2,1))][PICKUP])
+	#print(taxi.policy)
+
 	#taxi.simulate()
 '''>>>>>>> Stashed changes
 '''
