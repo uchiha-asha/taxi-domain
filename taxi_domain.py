@@ -160,6 +160,11 @@ class TaxiDomain:
 
 
 	def value_iteration(self, eps, iterations=1000, gamma = 0.9):
+		for cell1 in self.grid.actionSpace.keys():
+			for cell2 in self.grid.actionSpace.keys():
+				self.policy[(cell1, False, cell2)] = WEST
+				self.policy[(cell1, True, cell1)] = WEST
+
 		U = {}
 		U1 = {state : (0, None) for state in self.policy.keys()}
 
@@ -332,12 +337,28 @@ class TaxiDomain:
 		# print(X_mat)
 		return V
 
-	def iterative_policy_evaluation(self, gamma, eps, iterations = 10):
+	def iterative_policy_evaluation(self, P, R, gamma, eps, iterations = 10):
 		iteration = 1
-		V0 = {s: 0 for s in self.policy.keys()}
+		V = {}
+		V1 = {s: 0 for s in self.policy.keys()}
 
-		while True:
-			pass
+		delta = eps
+
+		while delta >= eps and iteration <= iterations:
+			iteration += 1
+			delta = 0
+			V = V1.copy()
+			V1 = {s: 0 for s in self.policy.keys()}
+			for s in self.policy.keys():
+				for s1 in self.policy.keys():
+					V1[s] += P[s][self.policy[s]][s1] * (R[s][self.policy[s]][s1] + gamma * V[s1])
+
+				if abs(V1[s]-V[s]) > delta:
+					delta = abs(V1[s] - V[s])
+
+		#print(V)
+
+		return V
 
 	def get_max_action(self, s, P, R, V):
 		mx = 0
@@ -355,7 +376,21 @@ class TaxiDomain:
 
 		return mx_act
 
-	def policy_iteration(self, epsilon = 0.01, iterations = 100, gamma = 0.9, linalg = False):
+	def norm_loss(V, U):
+		delta = 0
+
+		for s in self.policy.keys():
+			if abs(V[s] - U[s]) > delta:
+				delta = abs(V[s] - U[s])
+
+		return delta
+
+	def policy_iteration(self, epsilon = 0.1, iterations = 100, gamma = 0.9, linalg = False, opt_pol = None):
+		for cell1 in self.grid.actionSpace.keys():
+			for cell2 in self.grid.actionSpace.keys():
+				self.policy[(cell1, False, cell2)] = WEST
+				self.policy[(cell1, True, cell1)] = WEST
+
 		idx_mapping = {}
 		j = 0
 		P = self.P_matrix()
@@ -365,18 +400,23 @@ class TaxiDomain:
 			idx_mapping[key] = j
 			j += 1
 
-		method = [self.iterative_policy_evaluation, self.linalg_policy_evaluation]
-
 		iteration = 1
 		unchanged = False
+
+		losses = []
 
 		while not unchanged and iteration < iterations:
 			print("iteration:", iteration)
 			iteration += 1
 			unchanged = True
 			changes = []
-			V = method[linalg](P, R, gamma)
+			if linalg:
+				V = self.linalg_policy_evaluation(P, R, gamma)
+			else:
+				V = self.iterative_policy_evaluation(P, R, gamma, epsilon, iterations)
 			#print(V)
+			loss = norm_loss(V, opt_pol)
+			losses.append(loss)
 			for s in self.policy.keys():
 				act1 = self.policy[s]
 				act2 = self.get_max_action(s, P, R, V)
@@ -385,10 +425,10 @@ class TaxiDomain:
 					self.policy[s] = act2
 					changes.append([s, act1, act2])
 					unchanged = False
-
-			print(len(changes))
 			
+			print(len(changes))
 
+		return losses
 	'''
 	>>>>>>> Stashed changes
 	'''
@@ -489,9 +529,9 @@ class TaxiDomain:
 '''
 ======='''
 if __name__ == '__main__':
-	grid = Grid('grid_2x2.txt', (2,1), (1,1), (2,2))
-	taxi = TaxiDomain(grid, [(2,2)])
-	taxi.policy_iteration(linalg = True)
+	grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
+	taxi = TaxiDomain(grid, [(5,5)])
+	taxi.policy_iteration(linalg = False)
 	#print(grid.actionSpace[(2,2)])
 	#print(taxi.R_matrix()[((2,2), False, (2,1))][PICKUP])
 	pol = taxi.policy
