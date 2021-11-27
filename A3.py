@@ -1,7 +1,6 @@
 import sys
 import matplotlib.pyplot as plt
 from taxi_domain import Grid, TaxiDomain
-'''<<<<<<< Updated upstream
 import json, random
 
 def get_plot(data, xlabel, ylabel, title, folder):
@@ -17,9 +16,9 @@ def get_plot(data, xlabel, ylabel, title, folder):
 if sys.argv[1] == '1':
 	if sys.argv[2] == '2':
 		grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
-		taxi = TaxiDomain(grid)
+		taxi = TaxiDomain(grid, [(5,5)])
 		if sys.argv[3] == '1':
-			taxi.value_iteration(sys.argv[3])
+			taxi.value_iteration(sys.argv[4])
 			taxi.simulate()
 		elif sys.argv[3] == '2':
 			gammas = [0.01, 0.1, 0.5, 0.8, 0.99]
@@ -78,30 +77,6 @@ elif sys.argv[1] == '2':
 				print('Maximum reward for', names[ind], 'is:', max(discounted_reward), 'at', discounted_reward.index(max(discounted_reward))*10)
 				get_plot(discounted_reward, 'Episodes*10', 'Reward', names[ind], 'B')
 				ind += 1
-
-======='''
-import json
-
-if sys.argv[1] == '2':
-	grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
-	taxi = TaxiDomain(grid, [(5,5)])
-	if sys.argv[2] == '1':
-		taxi.value_iteration(float(sys.argv[3]))
-		#print(taxi.policy)
-		taxi.simulate()
-	elif sys.argv[2] == '2':
-		gammas = [0.01, 0.1, 0.5, 0.8, 0.99]
-		colors = ['r', 'b', 'g', 'y', 'tab:pink']
-
-		for i in range(len(gammas)):
-			norm_index = taxi.value_iteration(1e-10, gamma=gammas[i])
-			print(taxi.policy)
-			print(norm_index)
-			plt.plot([i+1 for i in range(len(norm_index))], norm_index, color=colors[i], label=gammas[i])
-
-		plt.legend()
-		plt.savefig("A3-Q2.2.png")
-		'''>>>>>>> Stashed changes'''
 	elif sys.argv[2] == '3':
 		random.seed(69)
 		grid = Grid('grid_5x5.txt', (1,2), (1,1), (1,5))
