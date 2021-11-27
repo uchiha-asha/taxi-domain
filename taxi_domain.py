@@ -1,6 +1,12 @@
 import random
+'''<<<<<<< Updated upstream
 import matplotlib.pyplot as plt
 
+======='''
+import numpy as np
+import sys
+np.set_printoptions(threshold=sys.maxsize)
+'''>>>>>>> Stashed changes'''
 
 NORTH = 'North'
 SOUTH = 'South'
@@ -79,8 +85,8 @@ class Grid:
 		
 		(self.carPos, self.passengerInCar, self.passengerPos) = newState
 
-		# if verbose:
-		# 	print('Action:', action, '--- New car position:', self.carPos, '--- Passenger Picked:', self.passengerPicked, '--- Passenger Dropped:', self.passengerDropped)
+		if verbose:
+			print('Action:', action, '--- New car position:', self.carPos, '--- Passenger Picked:', self.passengerInCar, '--- Passenger position:', self.passengerPos)
 		return newState
 
 	def passenger_dropped(self):
@@ -139,15 +145,13 @@ class TaxiDomain:
 		return -1
 
 	def simulate(self):
-		while not self.grid.passenger_dropped():
+		while True:
 			action = self.policy[(self.grid.carPos, self.grid.passengerInCar, self.grid.passengerPos)]
-			if action in [PICKUP, PUTDOWN]:
-				self.grid.perform_action(action)
-			else:
-				if Utility.sample_navigation():
-					self.grid.perform_action(action)
-				else:
-					self.grid.perform_action(Utility.sample_navigation_action())
+			
+			if action == None:
+				break
+				
+			self.grid.perform_action(action, verbose=True)
 
 
 	def decay(self, epsilon=0.1, iterations=1):
@@ -214,10 +218,165 @@ class TaxiDomain:
 
 		return max_norm_index
 
+	'''<<<<<<< Updated upstream
 
-	def policy_iteration(self, linalg = False):
-		return NotImplemented
+		def policy_iteration(self, linalg = False):
+			return NotImplemented
+	======='''
+	def P_matrix(self):
+		idx_mapping = {}
+		j = 0
 
+		for key in self.policy.keys():
+			idx_mapping[key] = j
+			j += 1
+
+		P = {}
+
+		for s in self.policy.keys():
+			A = {}
+
+			for action in ALLACTIONS:
+				if action not in ALLNAVIGATIONS:
+					k = {state : 0 for state in self.policy.keys()}
+					k[s] = 1
+
+					A[action] = k
+				else:
+					k = {state : 0 for state in self.policy.keys()}
+
+					for a in ALLNAVIGATIONS:
+						if a == action:
+							next = self.grid.get_next_state(s, a)
+							k[next] = 0.85
+						else:
+							next = self.grid.get_next_state(s, a)
+							k[next] = 0.05
+
+					A[action] = k
+
+
+
+			P[s] = A
+
+		return P
+
+	def R_matrix(self):
+		idx_mapping = {}
+		j = 0
+
+		for key in self.policy.keys():
+			idx_mapping[key] = j
+			j += 1
+
+		R = {}
+
+		for s in self.policy.keys():
+			A = {}
+
+			for action in ALLACTIONS:
+				if action not in ALLNAVIGATIONS:
+					k = {state : -1 for state in self.policy.keys()}
+
+					re = self.get_reward(s, action)
+
+					k[s] = re
+
+					A[action] = k
+				else:
+					k = {state : -1 for state in self.policy.keys()}
+
+					A[action] = k
+
+			R[s] = A
+
+		return R
+
+	def linalg_policy_evaluation(self, P, R, gamma):
+		X_mat = []
+		Y_mat = []
+
+		for s in self.policy.keys():
+			x = []
+			y = 0
+
+			for s1 in self.policy.keys():
+				if s == s1:
+					x.append(1 - P[s][self.policy[s]][s1] * gamma)
+					y += P[s][self.policy[s]][s1] * R[s][self.policy[s]][s1]
+				elif P[s][self.policy[s]][s1] != 0:
+					x.append(-gamma * P[s][self.policy[s]][s1])
+					y += P[s][self.policy[s]][s1] * R[s][self.policy[s]][s1]
+				else:
+					x.append(0)
+
+			X_mat.append(x)
+			Y_mat.append([y])
+
+		V_mat = np.linalg.solve(X_mat, Y_mat)
+		V = {}
+		i = 0
+		for s in self.policy.keys():
+			V[s] = V_mat[i]
+			i += 1
+
+		return V
+
+	def iterative_policy_evaluation(self, gamma, eps, iterations = 10):
+		iteration = 1
+		V0 = {s: 0 for s in self.policy.keys()}
+
+		while True:
+			pass
+
+	def get_max_action(self, s, P, V):
+		mx = 0
+		mx_act = None
+
+		for action in ALLACTIONS:
+			sum = 0
+			for s1 in self.policy.keys():
+				sum += P[s][action][s1] * V[s1]
+
+			if sum > mx or mx_act == None:
+				mx = sum
+				mx_act = action
+
+		return mx_act
+
+	def policy_iteration(self, epsilon = 0.01, iterations = 100, gamma = 0.9, linalg = False):
+		idx_mapping = {}
+		j = 0
+		P = self.P_matrix()
+		R = self.R_matrix()
+
+		for key in self.policy.keys():
+			idx_mapping[key] = j
+			j += 1
+
+		method = [self.iterative_policy_evaluation, self.linalg_policy_evaluation]
+
+		iteration = 1
+		unchanged = False
+
+		while not unchanged and iteration < iterations:
+			iteration += 1
+			unchanged = True
+
+			V = method[linalg](P, R, gamma)
+
+			for s in self.policy.keys():
+				act1 = self.policy[s]
+				act2 = self.get_max_action(s, P, V)
+
+				if act1 != act2:
+					self.policy[s] = act2
+					unchanged = False
+			
+
+	'''
+	>>>>>>> Stashed changes
+	'''
 	def best_action(self, curState):
 		best_action_val, best_q_value = NORTH, -(2**63)
 		for action in action_list:
@@ -284,8 +443,9 @@ class TaxiDomain:
 
 	def sarsa(self, epsilon = 0.1, decaying = False):
 		return NotImplemented
-
-
+'''
+<<<<<<< Updated upstream
+'''
 
 # grid = Grid('grid_5x5.txt', (1,2), (1,1), (1,5))
 # td1 = TaxiDomain(grid, [(1,1), (1,5), (5,1), (5,4)])
@@ -311,4 +471,13 @@ class TaxiDomain:
 
 # print(grid.actionSpace)
 # grid.perform_action(EAST, verbose = True)
-
+'''
+======='''
+if __name__ == '__main__':
+	grid = Grid('grid_5x5.txt', (3,3), (1,1), (5,5))
+	taxi = TaxiDomain(grid, [(5,5)])
+	taxi.policy_iteration(linalg = True)
+	print(taxi.policy)
+	#taxi.simulate()
+'''>>>>>>> Stashed changes
+'''
